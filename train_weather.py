@@ -20,6 +20,13 @@ from tqdm import tqdm
 from dataloader.BDDDataLoader import BDD100KDataset, weather_map
 from models.weather_classifier import WeatherClassifier
 
+import torch.multiprocessing as mp
+mp.set_sharing_strategy('file_system')
+
+from pathlib import Path
+CKPT_DIR = Path("checkpoints")
+CKPT_DIR.mkdir(exist_ok=True)
+
 def get_transforms():
     return A.Compose([
         A.Resize(224, 224),
@@ -36,7 +43,7 @@ def make_loader(img_dir, json_path, batch, shuffle):
         transform     = get_transforms(),
         filter_weather=None  # use all
     )
-    return DataLoader(ds, batch_size=batch, shuffle=shuffle, num_workers=4,
+    return DataLoader(ds, batch_size=batch, shuffle=shuffle, num_workers=2,
                       collate_fn=lambda x: tuple(zip(*x)))
 
 def run_epoch(model, loader, optim=None):
@@ -92,7 +99,7 @@ def main(args):
               f"time={time.time()-t0:.1f}s")
         
         # checkpoint every epoch
-        ckpt_path = os.path.join("checkpoints", f"weather_epoch{epoch}.pth")
+        ckpt_path = CKPT_DIR / f"weather_ep{epoch}.pth"
         torch.save(model.state_dict(), ckpt_path)
 
 if __name__ == "__main__":
