@@ -3,6 +3,8 @@ import json
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
+from torch.utils.data import Dataset
+from albumentations.pytorch import ToTensorV2      # keep for fallback
 
 # Hazard label mapping for detection
 hazard_label_map = {
@@ -86,6 +88,9 @@ class BDD100KDataset(Dataset):
         }
 
         if self.transform:
-            image = self.transform(image)
+            out   = self.transform(image=np.array(image))
+            image = out["image"]
+        else:
+            image = ToTensorV2()(image=np.array(image))["image"]
 
         return image, target
